@@ -1,5 +1,7 @@
 #include <iostream>
+#include "GrassApplication.h"
 
 int main() {
-    std::cout << "Hello World!" << std::endl;
+    GrassApplication app;
+    return app.Run();
 }
