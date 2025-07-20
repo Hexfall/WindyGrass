@@ -13,11 +13,17 @@
 
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
-    m_grassHeightToWidthRatioValue(0.035f),
-    m_grassHeightToLengthRatioValue(0.2),
-    m_cameraPos(0),
-    m_cameraDir(0, -.2, 1) {
-}
+      mv_grassHeightToWidthRatioValue(0.035f),
+      mv_grassHeightToLengthRatioValue(0.2),
+      m_cameraPos(0, .6, -2),
+      m_cameraDir(0, -.2, 1),
+      m_cameraSpeed(0.005),
+      mv_grassStalkPoint(0, 1.49),
+      mv_grassPullPoint(1.83, 6.06), 
+      mv_grassEndPoint(6.11, 6.02),
+      mv_time(0.0f),
+      mv_grassSegmentsValue(16u)
+      {}
 
 void GrassApplication::Initialize() {
     Application::Initialize();
@@ -25,27 +31,39 @@ void GrassApplication::Initialize() {
     InitializeShaders();
     UpdateCamera();
 
+    glEnable(GL_DEPTH_TEST);
+
     m_imGui.Initialize(GetMainWindow());
 
     // Define the vertex structure
     struct Vertex
     {
         Vertex() = default;
-        Vertex(const glm::vec3& position, const float height) : position(position), height(height) {}
+        Vertex(const glm::vec3& position, const float height, const float angle) : position(position), height(height), angle(angle) { timeOffset = (float)rand() / RAND_MAX * 3.14159f; }
         glm::vec3 position;
         float height;
+        float angle;
+        float timeOffset;
     };
     
     VertexFormat grassVertexFormat;
     grassVertexFormat.AddVertexAttribute<float>(3);
     grassVertexFormat.AddVertexAttribute<float>(1);
+    grassVertexFormat.AddVertexAttribute<float>(1);
+    grassVertexFormat.AddVertexAttribute<float>(1);
     
     std::vector<Vertex> grassVertices;
-    grassVertices.emplace_back(glm::vec3(0), 0.3f);
-    grassVertices.emplace_back(glm::vec3(0.5, 0, 0), 0.45f);
+    grassVertices.emplace_back(glm::vec3(0), 0.3f, 0.0);
+    grassVertices.emplace_back(glm::vec3(0.5, 0, 0), 0.45f, 0.0);
     
-    for (int i = 0; i < 100000; i++) {
-        grassVertices.emplace_back(glm::vec3((float)rand() / RAND_MAX * 2 - 1, 0, (float)rand() / RAND_MAX * 2 - 1), (float)rand() / RAND_MAX*.15 + 0.15f);
+    for (int i = 0; i < 10000000; i++) {
+        grassVertices.emplace_back(
+                glm::vec3(
+                        ((float)rand() / RAND_MAX * 2 - 1)*50,
+                        0,
+                        ((float)rand() / RAND_MAX * 2 - 1)*50),
+                (float)rand() / RAND_MAX*.25 + 0.15f,
+                (float)rand() / RAND_MAX * 2 * 3.14159f);
     }
     
     m_grassMesh.AddSubmesh<Vertex, VertexFormat::LayoutIterator>(
@@ -57,17 +75,23 @@ void GrassApplication::Initialize() {
          grassVertexFormat.LayoutEnd()
         );
 
-    m_grassHeightToWidthRatio = m_grassShaderProgram.GetUniformLocation("HeightToWidthRatio");
-    m_grassHeightToLengthRatio = m_grassShaderProgram.GetUniformLocation("HeightToLengthRatio");
-    m_grassSegments = m_grassShaderProgram.GetUniformLocation("Segments");
-    m_viewProjMatrix = m_grassShaderProgram.GetUniformLocation("ViewProjMatrix");
-    m_worldMatrix = m_grassShaderProgram.GetUniformLocation("WorldMatrix");
+    ml_grassHeightToWidthRatio = m_grassShaderProgram.GetUniformLocation("HeightToWidthRatio");
+    ml_grassHeightToLengthRatio = m_grassShaderProgram.GetUniformLocation("HeightToLengthRatio");
+    ml_grassSegments = m_grassShaderProgram.GetUniformLocation("Segments");
+    ml_viewProjMatrix = m_grassShaderProgram.GetUniformLocation("ViewProjMatrix");
+    ml_worldMatrix = m_grassShaderProgram.GetUniformLocation("WorldMatrix");
+    ml_grassStalkPoint = m_grassShaderProgram.GetUniformLocation("BezStalk");
+    ml_grassPullPoint = m_grassShaderProgram.GetUniformLocation("BezPull");
+    ml_grassEndPoint = m_grassShaderProgram.GetUniformLocation("BezEnd");
+    ml_time = m_grassShaderProgram.GetUniformLocation("Time");
 }
 
 void GrassApplication::Update() {
     Application::Update();
     
-    if (GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Left)) {
+    mv_time += GetDeltaTime();
+    
+    if (GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right)) {
         glm::vec2 mouseDelta = GetMainWindow().GetMousePosition(true) - m_mousePos;
         m_cameraDir = glm::rotate(mouseDelta.x * 0.5f, glm::vec3(0, 1, 0)) * glm::vec4(m_cameraDir, 0);
         m_cameraDir = glm::rotate(mouseDelta.y * 0.5f, glm::vec3(1, 0, 0)) * glm::vec4(m_cameraDir, 0);
@@ -76,13 +100,17 @@ void GrassApplication::Update() {
     m_mousePos = GetMainWindow().GetMousePosition(true);
     
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_W))
-        m_cameraPos += m_cameraDir * 0.1f;
+        m_cameraPos += m_cameraDir * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_S))
-        m_cameraPos -= m_cameraDir * 0.1f;
+        m_cameraPos -= m_cameraDir * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_A))
-        m_cameraPos -= glm::normalize(glm::cross(m_cameraDir, glm::vec3(0, 1, 0))) * 0.1f;
+        m_cameraPos -= glm::normalize(glm::cross(m_cameraDir, glm::vec3(0, 1, 0))) * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_D))
-        m_cameraPos += glm::normalize(glm::cross(m_cameraDir, glm::vec3(0, 1, 0))) * 0.1f;
+        m_cameraPos += glm::normalize(glm::cross(m_cameraDir, glm::vec3(0, 1, 0))) * m_cameraSpeed;
+    if (GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE))
+        m_cameraPos += glm::vec3(0, 1, 0) * m_cameraSpeed;
+    if (GetMainWindow().IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
+        m_cameraPos -= glm::vec3(0, 1, 0) * m_cameraSpeed;
     
     UpdateCamera();
 }
@@ -99,11 +127,15 @@ void GrassApplication::Render() {
     GetDevice().Clear(true, Color(0.195f, 0.598f, 0.797f, 1.0f), true, 1.0f);
     
     m_grassShaderProgram.Use();
-    m_grassShaderProgram.SetUniform(m_worldMatrix, glm::scale(glm::vec3(1.0f)));
-    m_grassShaderProgram.SetUniform(m_viewProjMatrix, m_camera.GetViewProjectionMatrix());
-    m_grassShaderProgram.SetUniform(m_grassHeightToWidthRatio, m_grassHeightToWidthRatioValue);
-    m_grassShaderProgram.SetUniform(m_grassHeightToLengthRatio, m_grassHeightToLengthRatioValue);
-    m_grassShaderProgram.SetUniform(m_grassSegments, 16u);
+    m_grassShaderProgram.SetUniform(ml_worldMatrix, glm::scale(glm::vec3(1.0f)));
+    m_grassShaderProgram.SetUniform(ml_viewProjMatrix, m_camera.GetViewProjectionMatrix());
+    m_grassShaderProgram.SetUniform(ml_grassHeightToWidthRatio, mv_grassHeightToWidthRatioValue);
+    m_grassShaderProgram.SetUniform(ml_grassHeightToLengthRatio, mv_grassHeightToLengthRatioValue);
+    m_grassShaderProgram.SetUniform(ml_grassSegments, (uint) mv_grassSegmentsValue);
+    m_grassShaderProgram.SetUniform(ml_grassStalkPoint, mv_grassStalkPoint);
+    m_grassShaderProgram.SetUniform(ml_grassPullPoint, mv_grassPullPoint);
+    m_grassShaderProgram.SetUniform(ml_grassEndPoint, mv_grassEndPoint);
+    m_grassShaderProgram.SetUniform(ml_time, mv_time);
     m_grassMesh.DrawSubmesh(0);
     
     RenderGUI();
@@ -112,10 +144,18 @@ void GrassApplication::Render() {
 void GrassApplication::RenderGUI() {
     m_imGui.BeginFrame();
 
-    ImGui::DragFloat("Height to width ratio", &m_grassHeightToWidthRatioValue, 0.001f, 0.001f, 10.0f);
-    ImGui::DragFloat("Height to length ratio", &m_grassHeightToLengthRatioValue, 0.001f, 0.001f, 10.0f);
-    ImGui::DragFloat3("Camera Position", &m_cameraPos[0]);
-    ImGui::DragFloat3("Camera Angle", &m_cameraDir[0]);
+    ImGui::DragFloat("Height to width ratio", &mv_grassHeightToWidthRatioValue, 0.001f, 0.001f, 10.0f);
+    ImGui::DragFloat("Height to length ratio", &mv_grassHeightToLengthRatioValue, 0.001f, 0.001f, 10.0f);
+    if (ImGui::CollapsingHeader("Camera")) {
+        ImGui::DragFloat("Camera Speed", &m_cameraSpeed, 0.001f, 0.0001f, 0.01f);
+        ImGui::DragFloat3("Camera Position", &m_cameraPos[0]);
+        ImGui::DragFloat3("Camera Angle", &m_cameraDir[0]);
+    }
+    ImGui::DragFloat2("Stalk Point", &mv_grassStalkPoint[0], 0.05f);
+    ImGui::DragFloat2("Pull Point", &mv_grassPullPoint[0], 0.05f);
+    ImGui::DragFloat2("End Point", &mv_grassEndPoint[0], 0.05f);
+    ImGui::DragFloat("Time", &mv_time, 0.05f);
+    ImGui::DragInt("Segments", &mv_grassSegmentsValue, 1, 1, 16);
     
     m_imGui.EndFrame();
 }

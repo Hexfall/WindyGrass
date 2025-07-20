@@ -28,18 +28,29 @@ private:
     Camera m_camera;
     glm::vec3 m_cameraPos;
     glm::vec3 m_cameraDir;
+    float m_cameraSpeed;
     
     glm::vec2 m_mousePos;
     
-    ShaderProgram::Location m_grassHeightToWidthRatio;
-    ShaderProgram::Location m_grassHeightToLengthRatio;
-    ShaderProgram::Location m_grassSegments;
-    ShaderProgram::Location m_viewProjMatrix;
+    // memberlocation_name
+    ShaderProgram::Location ml_grassHeightToWidthRatio;
+    ShaderProgram::Location ml_grassHeightToLengthRatio;
+    ShaderProgram::Location ml_grassSegments;
+    ShaderProgram::Location ml_grassStalkPoint;
+    ShaderProgram::Location ml_grassPullPoint;
+    ShaderProgram::Location ml_grassEndPoint;
+    ShaderProgram::Location ml_time;
+    
+    ShaderProgram::Location ml_viewProjMatrix;
+    ShaderProgram::Location ml_worldMatrix;
 
-    ShaderProgram::Location m_worldMatrix;
-
-    float m_grassHeightToWidthRatioValue;
-    float m_grassHeightToLengthRatioValue;
+    float mv_grassHeightToWidthRatioValue;
+    float mv_grassHeightToLengthRatioValue;
+    glm::vec2 mv_grassStalkPoint;
+    glm::vec2 mv_grassPullPoint;
+    glm::vec2 mv_grassEndPoint;
+    float mv_time;
+    int  mv_grassSegmentsValue;
 
     void UpdateCamera();
 };
