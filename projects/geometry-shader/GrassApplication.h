@@ -3,8 +3,11 @@
 #include <ituGL/application/Application.h>
 #include <ituGL/shader/ShaderProgram.h>
 #include <ituGL/geometry/Mesh.h>
+#include <memory>
 #include "ituGL/utils/DearImGui.h"
 #include "ituGL/camera/Camera.h"
+#include "ituGL/shader/Material.h"
+#include <ituGL/texture/Texture2DObject.h>
 
 class GrassApplication : public Application{
 public:
@@ -18,12 +21,15 @@ protected:
     
 private:
     void InitializeShaders();
+    void InitializeMesh();
+    void InitializeMaterial();
     void RenderGUI();
 
     DearImGui m_imGui;
     
-    ShaderProgram m_grassShaderProgram;
+    std::shared_ptr<ShaderProgram> m_grassShaderProgram;
     Mesh m_grassMesh;
+    std::shared_ptr<Material> m_grassMaterial;
     
     Camera m_camera;
     glm::vec3 m_cameraPos;
@@ -49,6 +55,10 @@ private:
     ShaderProgram::Location ml_diffuseReflection;
     ShaderProgram::Location ml_specularReflection;
     ShaderProgram::Location ml_specularExponent;
+    
+    ShaderProgram::Location ml_grassColor;
+    ShaderProgram::Location ml_stalkColor;
+    ShaderProgram::Location ml_grassTexture;
 
     float mv_grassHeightToWidthRatioValue;
     float mv_grassHeightToLengthRatioValue;
@@ -61,6 +71,11 @@ private:
     float mv_diffuseReflectionValue;
     float mv_specularReflectionValue;
     float mv_specularExponentValue;
+    glm::vec3 mv_grassColorValue;
+    glm::vec3 mv_stalkColorValue;
+    std::shared_ptr<Texture2DObject> m_grassTexture;
 
     void UpdateCamera();
+
+    std::shared_ptr<Texture2DObject> LoadTexture(const char *path);
 };

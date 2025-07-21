@@ -9,6 +9,8 @@ in float timeOffset[];
 
 out vec3 WorldPosition;
 out vec3 Normal;
+out float StalkDist;
+out vec2 TexCoord;
 
 uniform float HeightToWidthRatio;
 uniform float HeightToLengthRatio;
@@ -88,7 +90,7 @@ vec3 getBezierTangent(float step) {
 }
 
 vec3 getCurveNormal(vec3 tangent) {
-    return cross(vec3(1.0, 0.0, 0.0), tangent);
+    return cross(vec3(-1.0, 0.0, 0.0), tangent);
 }
 
 void main() {
@@ -111,18 +113,24 @@ void main() {
         vec3 curveNormal = getCurveNormal(tangent);
 
         // Left vertex
+        StalkDist = -1;
+        TexCoord = vec2(0.0, step);
         Normal = normalize((WorldMatrix * rotationMatrix * inverseRotation(normalRotation) * vec4(curveNormal, 0.0)).xyz);
         WorldPosition = (WorldMatrix * rotationMatrix * (gl_in[0].gl_Position + vec4(-offset.x, offset.yzw))).xyz;
         gl_Position = ViewProjMatrix * vec4(WorldPosition, 1.0);
         EmitVertex();
         
         // Right vertex
+        StalkDist = 1;
+        TexCoord = vec2(1.0, step);
         Normal = normalize((WorldMatrix * rotationMatrix * normalRotation * vec4(curveNormal, 0.0)).xyz);
         WorldPosition = (WorldMatrix * rotationMatrix * (gl_in[0].gl_Position + offset)).xyz;
         gl_Position = ViewProjMatrix * vec4(WorldPosition, 1.0);
         EmitVertex();
     }
-    
+
+    StalkDist = 0;
+    TexCoord = vec2(0.5, 1.0);
     Normal = (WorldMatrix * rotationMatrix * vec4(getCurveNormal(normalize(getBezierTangent(1.0))), 0.0)).xyz;
     WorldPosition = (WorldMatrix * rotationMatrix * (gl_in[0].gl_Position + vec4(0, getYCoord(1)*height[0], getZCoord(1)*height[0]*HeightToLengthRatio, 0))).xyz;
     gl_Position = ViewProjMatrix * vec4(WorldPosition, 1.0);
