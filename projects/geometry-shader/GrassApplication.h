@@ -43,6 +43,12 @@ private:
     
     ShaderProgram::Location ml_viewProjMatrix;
     ShaderProgram::Location ml_worldMatrix;
+    
+    ShaderProgram::Location ml_cameraPos;
+    ShaderProgram::Location ml_ambientReflection;
+    ShaderProgram::Location ml_diffuseReflection;
+    ShaderProgram::Location ml_specularReflection;
+    ShaderProgram::Location ml_specularExponent;
 
     float mv_grassHeightToWidthRatioValue;
     float mv_grassHeightToLengthRatioValue;
@@ -51,6 +57,10 @@ private:
     glm::vec2 mv_grassEndPoint;
     float mv_time;
     int  mv_grassSegmentsValue;
+    float mv_ambientReflectionValue;
+    float mv_diffuseReflectionValue;
+    float mv_specularReflectionValue;
+    float mv_specularExponentValue;
 
     void UpdateCamera();
 };

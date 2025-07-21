@@ -14,7 +14,7 @@
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
       mv_grassHeightToWidthRatioValue(0.035f),
-      mv_grassHeightToLengthRatioValue(0.2),
+      mv_grassHeightToLengthRatioValue(0.3),
       m_cameraPos(0, .6, -2),
       m_cameraDir(0, -.2, 1),
       m_cameraSpeed(0.005),
@@ -22,7 +22,11 @@ GrassApplication::GrassApplication()
       mv_grassPullPoint(1.83, 6.06), 
       mv_grassEndPoint(6.11, 6.02),
       mv_time(0.0f),
-      mv_grassSegmentsValue(16u)
+      mv_grassSegmentsValue(16u),
+      mv_ambientReflectionValue(1.0),
+      mv_diffuseReflectionValue(1.0),
+      mv_specularReflectionValue(1.0),
+      mv_specularExponentValue(10.0)
       {}
 
 void GrassApplication::Initialize() {
@@ -56,12 +60,12 @@ void GrassApplication::Initialize() {
     grassVertices.emplace_back(glm::vec3(0), 0.3f, 0.0);
     grassVertices.emplace_back(glm::vec3(0.5, 0, 0), 0.45f, 0.0);
     
-    for (int i = 0; i < 10000000; i++) {
+    for (int i = 0; i < 10000; i++) {
         grassVertices.emplace_back(
                 glm::vec3(
-                        ((float)rand() / RAND_MAX * 2 - 1)*50,
+                        ((float)rand() / RAND_MAX * 2 - 1)*3.5,
                         0,
-                        ((float)rand() / RAND_MAX * 2 - 1)*50),
+                        ((float)rand() / RAND_MAX * 2 - 1)*3.5),
                 (float)rand() / RAND_MAX*.25 + 0.15f,
                 (float)rand() / RAND_MAX * 2 * 3.14159f);
     }
@@ -84,6 +88,11 @@ void GrassApplication::Initialize() {
     ml_grassPullPoint = m_grassShaderProgram.GetUniformLocation("BezPull");
     ml_grassEndPoint = m_grassShaderProgram.GetUniformLocation("BezEnd");
     ml_time = m_grassShaderProgram.GetUniformLocation("Time");
+    ml_cameraPos = m_grassShaderProgram.GetUniformLocation("CameraPosition");
+    ml_ambientReflection = m_grassShaderProgram.GetUniformLocation("AmbientReflection");
+    ml_diffuseReflection = m_grassShaderProgram.GetUniformLocation("DiffuseReflection");
+    ml_specularReflection = m_grassShaderProgram.GetUniformLocation("SpecularReflection");
+    ml_specularExponent = m_grassShaderProgram.GetUniformLocation("SpecularExponent");
 }
 
 void GrassApplication::Update() {
@@ -136,6 +145,13 @@ void GrassApplication::Render() {
     m_grassShaderProgram.SetUniform(ml_grassPullPoint, mv_grassPullPoint);
     m_grassShaderProgram.SetUniform(ml_grassEndPoint, mv_grassEndPoint);
     m_grassShaderProgram.SetUniform(ml_time, mv_time);
+    m_grassShaderProgram.SetUniform(ml_cameraPos, m_cameraPos);
+    
+    m_grassShaderProgram.SetUniform(ml_ambientReflection, mv_ambientReflectionValue);
+    m_grassShaderProgram.SetUniform(ml_diffuseReflection, mv_diffuseReflectionValue);
+    m_grassShaderProgram.SetUniform(ml_specularReflection, mv_specularReflectionValue);
+    m_grassShaderProgram.SetUniform(ml_specularExponent, mv_specularExponentValue);
+    
     m_grassMesh.DrawSubmesh(0);
     
     RenderGUI();
@@ -144,18 +160,26 @@ void GrassApplication::Render() {
 void GrassApplication::RenderGUI() {
     m_imGui.BeginFrame();
 
-    ImGui::DragFloat("Height to width ratio", &mv_grassHeightToWidthRatioValue, 0.001f, 0.001f, 10.0f);
-    ImGui::DragFloat("Height to length ratio", &mv_grassHeightToLengthRatioValue, 0.001f, 0.001f, 10.0f);
     if (ImGui::CollapsingHeader("Camera")) {
         ImGui::DragFloat("Camera Speed", &m_cameraSpeed, 0.001f, 0.0001f, 0.01f);
         ImGui::DragFloat3("Camera Position", &m_cameraPos[0]);
         ImGui::DragFloat3("Camera Angle", &m_cameraDir[0]);
     }
-    ImGui::DragFloat2("Stalk Point", &mv_grassStalkPoint[0], 0.05f);
-    ImGui::DragFloat2("Pull Point", &mv_grassPullPoint[0], 0.05f);
-    ImGui::DragFloat2("End Point", &mv_grassEndPoint[0], 0.05f);
-    ImGui::DragFloat("Time", &mv_time, 0.05f);
-    ImGui::DragInt("Segments", &mv_grassSegmentsValue, 1, 1, 16);
+    if (ImGui::CollapsingHeader("Grass Properties")) {
+        ImGui::DragFloat("Height to width ratio", &mv_grassHeightToWidthRatioValue, 0.001f, 0.001f, 10.0f);
+        ImGui::DragFloat("Height to length ratio", &mv_grassHeightToLengthRatioValue, 0.001f, 0.001f, 10.0f);
+        ImGui::DragFloat2("Stalk Point", &mv_grassStalkPoint[0], 0.05f);
+        ImGui::DragFloat2("Pull Point", &mv_grassPullPoint[0], 0.05f);
+        ImGui::DragFloat2("End Point", &mv_grassEndPoint[0], 0.05f);
+        ImGui::DragFloat("Time", &mv_time, 0.05f);
+        ImGui::DragInt("Segments", &mv_grassSegmentsValue, 1, 1, 16);
+    }
+    if (ImGui::CollapsingHeader("Material Properties")) {
+        ImGui::DragFloat("Ambient Reflection", &mv_ambientReflectionValue, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Diffuse Reflection", &mv_diffuseReflectionValue, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Specular Reflection", &mv_specularReflectionValue, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Specular Exponent", &mv_specularExponentValue, 0.1f, 0.0f, 100.0f);
+    }
     
     m_imGui.EndFrame();
 }
