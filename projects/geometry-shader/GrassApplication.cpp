@@ -32,9 +32,7 @@ GrassApplication::GrassApplication()
       mv_ambientReflectionValue(0.9),
       mv_diffuseReflectionValue(0.9),
       mv_specularReflectionValue(1.1),
-      mv_specularExponentValue(50.0),
-      mv_grassColorValue(0.484, 0.672, 0.016),
-      mv_stalkColorValue(0.359, 0.449, 0.02)
+      mv_specularExponentValue(50.0)
       {}
 
 void GrassApplication::Initialize() {
@@ -49,23 +47,6 @@ void GrassApplication::Initialize() {
 
     InitializeMesh();
     InitializeMaterial();
-
-    ml_grassHeightToWidthRatio = m_grassShaderProgram->GetUniformLocation("HeightToWidthRatio");
-    ml_grassHeightToLengthRatio = m_grassShaderProgram->GetUniformLocation("HeightToLengthRatio");
-    ml_grassSegments = m_grassShaderProgram->GetUniformLocation("Segments");
-    ml_viewProjMatrix = m_grassShaderProgram->GetUniformLocation("ViewProjMatrix");
-    ml_worldMatrix = m_grassShaderProgram->GetUniformLocation("WorldMatrix");
-    ml_grassStalkPoint = m_grassShaderProgram->GetUniformLocation("BezStalk");
-    ml_grassPullPoint = m_grassShaderProgram->GetUniformLocation("BezPull");
-    ml_grassEndPoint = m_grassShaderProgram->GetUniformLocation("BezEnd");
-    ml_time = m_grassShaderProgram->GetUniformLocation("Time");
-    ml_cameraPos = m_grassShaderProgram->GetUniformLocation("CameraPosition");
-    ml_ambientReflection = m_grassShaderProgram->GetUniformLocation("AmbientReflection");
-    ml_diffuseReflection = m_grassShaderProgram->GetUniformLocation("DiffuseReflection");
-    ml_specularReflection = m_grassShaderProgram->GetUniformLocation("SpecularReflection");
-    ml_specularExponent = m_grassShaderProgram->GetUniformLocation("SpecularExponent");
-    ml_grassColor = m_grassShaderProgram->GetUniformLocation("GrassColor");
-    ml_stalkColor = m_grassShaderProgram->GetUniformLocation("StalkColor");
 }
 
 void GrassApplication::InitializeShaders() {
@@ -232,8 +213,6 @@ void GrassApplication::RenderGUI() {
         ImGui::DragFloat("Diffuse Reflection", &mv_diffuseReflectionValue, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Specular Reflection", &mv_specularReflectionValue, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Specular Exponent", &mv_specularExponentValue, 0.1f, 0.0f, 100.0f);
-        ImGui::ColorEdit3("Grass Color", &mv_grassColorValue[0]);
-        ImGui::ColorEdit3("Stalk Color", &mv_stalkColorValue[0]);
     }
     
     m_imGui.EndFrame();

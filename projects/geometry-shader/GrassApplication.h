@@ -37,28 +37,6 @@ private:
     float m_cameraSpeed;
     
     glm::vec2 m_mousePos;
-    
-    // memberlocation_name
-    ShaderProgram::Location ml_grassHeightToWidthRatio;
-    ShaderProgram::Location ml_grassHeightToLengthRatio;
-    ShaderProgram::Location ml_grassSegments;
-    ShaderProgram::Location ml_grassStalkPoint;
-    ShaderProgram::Location ml_grassPullPoint;
-    ShaderProgram::Location ml_grassEndPoint;
-    ShaderProgram::Location ml_time;
-    
-    ShaderProgram::Location ml_viewProjMatrix;
-    ShaderProgram::Location ml_worldMatrix;
-    
-    ShaderProgram::Location ml_cameraPos;
-    ShaderProgram::Location ml_ambientReflection;
-    ShaderProgram::Location ml_diffuseReflection;
-    ShaderProgram::Location ml_specularReflection;
-    ShaderProgram::Location ml_specularExponent;
-    
-    ShaderProgram::Location ml_grassColor;
-    ShaderProgram::Location ml_stalkColor;
-    ShaderProgram::Location ml_grassTexture;
 
     float mv_grassHeightToWidthRatioValue;
     float mv_grassHeightToLengthRatioValue;
@@ -71,8 +49,6 @@ private:
     float mv_diffuseReflectionValue;
     float mv_specularReflectionValue;
     float mv_specularExponentValue;
-    glm::vec3 mv_grassColorValue;
-    glm::vec3 mv_stalkColorValue;
     std::shared_ptr<Texture2DObject> m_grassTexture;
 
     void UpdateCamera();
