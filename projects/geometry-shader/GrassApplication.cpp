@@ -20,8 +20,8 @@
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
       mv_grassHeightToWidthRatioValue(0.035f),
-      mv_grassHeightToLengthRatioValue(0.95),
-      m_cameraPos(0, .6, -2),
+      mv_grassHeightToLengthRatioValue(0.35f),
+      m_cameraPos(0, 1.6, -2),
       m_cameraDir(0, -.2, 1),
       m_cameraSpeed(0.005),
       mv_grassStalkPoint(0, 1.49),
@@ -32,7 +32,12 @@ GrassApplication::GrassApplication()
       mv_ambientReflectionValue(0.9),
       mv_diffuseReflectionValue(0.9),
       mv_specularReflectionValue(1.1),
-      mv_specularExponentValue(50.0)
+      mv_specularExponentValue(50.0),
+      m_windOffset(0),
+      m_windDirection(1, -1.63),
+      m_windSpeed(.6),
+      m_showWind(false),
+      m_windSway(2, -2)
       {}
 
 void GrassApplication::Initialize() {
@@ -110,13 +115,13 @@ void GrassApplication::InitializeGrassMesh() {
 
     std::vector<Vertex> grassVertices;
 
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 75000; i++) {
         grassVertices.emplace_back(
                 glm::vec3(
                         ((float)rand() / RAND_MAX * 2 - 1)*10,
                         0,
                         ((float)rand() / RAND_MAX * 2 - 1)*10),
-                (float)rand() / RAND_MAX*.25 + 0.15f,
+                (float)rand() / RAND_MAX*.35 + 0.25f,
                 (float)rand() / RAND_MAX * 2 * 3.14159f);
     }
 
@@ -163,15 +168,23 @@ void GrassApplication::InitializeMaterial() {
     m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
 
     m_grassTexture = LoadTexture("textures/grass.jpg");
-    auto grassHeightMap = CreatePerlinNoise(1024, 1024, glm::ivec2(0, 0));
+    auto grassHeightMap = CreateBrownianPerlinNoise(1024, 1024, glm::ivec2(0, 0));
+    auto grassWindMap = CreatePerlinNoise(1024, 1024, glm::ivec2(-1, -1));
     m_grassMaterial->SetUniformValue("GrassTexture", m_grassTexture);
     m_grassMaterial->SetUniformValue("HeightMap", grassHeightMap);
+    m_grassMaterial->SetUniformValue("WindMap", grassWindMap);
     m_grassMaterial->SetBlendEquation(Material::BlendEquation::Add);
     m_grassMaterial->SetBlendParams(Material::BlendParam::SourceAlpha, Material::BlendParam::OneMinusSourceAlpha);
     
     m_dirtMaterial = std::make_shared<Material>(m_dirtShaderProgram);
-    
+
     m_dirtMaterial->SetUniformValue("Color", glm::vec3(0.512, 0.395, 0.223));
+    m_dirtMaterial->SetUniformValue("PerlinTexture", grassWindMap);
+    m_dirtMaterial->SetUniformValue("HiColor", glm::vec3(1, 0, 0));
+    m_dirtMaterial->SetUniformValue("LoColor", glm::vec3(0, 1, 0));
+    m_dirtMaterial->SetUniformValue("ShowTexture", (m_showWind ? 1u : 0u));
+    m_dirtMaterial->SetBlendEquation(Material::BlendEquation::Add);
+    m_dirtMaterial->SetBlendParams(Material::BlendParam::SourceAlpha, Material::BlendParam::OneMinusSourceAlpha);
 }
 
 void GrassApplication::Update() {
@@ -199,6 +212,8 @@ void GrassApplication::Update() {
         m_cameraPos += glm::vec3(0, 1, 0) * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
         m_cameraPos -= glm::vec3(0, 1, 0) * m_cameraSpeed;
+    
+    m_windOffset += GetDeltaTime() * m_windSpeed * m_windDirection;
     
     UpdateCamera();
 }
@@ -236,6 +251,9 @@ void GrassApplication::Render() {
     m_grassMaterial->SetUniformValue("AmbientColor", glm::vec3(0.25));;
     m_grassMaterial->SetUniformValue("LightColor", glm::vec3(1));
     
+    m_grassMaterial->SetUniformValue("WindOffset", m_windOffset);
+    m_grassMaterial->SetUniformValue("WindSway", m_windSway);
+
     m_grassMaterial->SetUniformValue("Time", mv_time);
     
     m_grassMesh.DrawSubmesh(0);
@@ -243,6 +261,8 @@ void GrassApplication::Render() {
     m_dirtMaterial->Use();
     m_dirtMaterial->SetUniformValue("WorldMatrix", glm::scale(glm::vec3(1.0f)));
     m_dirtMaterial->SetUniformValue("ViewProjMatrix", m_camera.GetViewProjectionMatrix());
+    m_dirtMaterial->SetUniformValue("ShowTexture", (m_showWind ? 1u : 0u));
+    m_dirtMaterial->SetUniformValue("TextureOffset", m_windOffset);
     m_dirtMesh.DrawSubmesh(0);
     
     RenderGUI();
@@ -271,6 +291,12 @@ void GrassApplication::RenderGUI() {
         ImGui::DragFloat("Specular Reflection", &mv_specularReflectionValue, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Specular Exponent", &mv_specularExponentValue, 0.1f, 0.0f, 100.0f);
     }
+    if (ImGui::CollapsingHeader("Wind Properties")) {
+        ImGui::Checkbox("Show Wind", &m_showWind);
+        ImGui::DragFloat("Wind Speed", &m_windSpeed, 0.1f, 0.0001f, 10.0f);
+        ImGui::DragFloat2("Wind Direction", &m_windDirection[0], 0.05f);
+        ImGui::DragFloat2("Wind Sway", &m_windSway[0], 0.01f, -10.0f, 10.0f);
+    }
     
     m_imGui.EndFrame();
 }
@@ -292,6 +318,8 @@ std::shared_ptr<Texture2DObject> GrassApplication::LoadTexture(const char* path)
     unsigned char* data = stbi_load(path, &width, &height, &components, 4);
 
     texture->Bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     texture->SetImage(0, width, height, TextureObject::FormatRGBA, TextureObject::InternalFormatRGBA, std::span<const unsigned char>(data, width * height * 4));
 
     // Generate mipmaps
@@ -303,8 +331,10 @@ std::shared_ptr<Texture2DObject> GrassApplication::LoadTexture(const char* path)
     return texture;
 }
 
-std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
+std::shared_ptr<Texture2DObject> GrassApplication::CreateBrownianPerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
     std::shared_ptr<Texture2DObject> noise = std::make_shared<Texture2DObject>();
+
+    float minVal = 1.0, maxVal = -1.0;
 
     std::vector<float> pixels(height * width);
     for (unsigned int j = 0; j < height; ++j)
@@ -313,11 +343,51 @@ std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned in
         {
             float x = static_cast<float>(i) / (width - 1) + coords.x;
             float y = static_cast<float>(j) / (height - 1) + coords.y;
-            pixels[j * width + i] = stb_perlin_fbm_noise3(x, y, 0.0f, 1.9f, 0.5f, 8) * 0.5f;
+            float noise = stb_perlin_fbm_noise3(x, y, 0.0f, 2.0f, 0.5f, 4);
+            noise = glm::clamp(noise, -1.0f, 1.0f);
+            noise = (noise + 1.0f) * 0.5f;
+            pixels[j * width + i] = noise;
+            minVal = std::min(minVal, noise);
+            maxVal = std::max(maxVal, noise);
         }
     }
 
+    std::cout << "Min: " << minVal << " Max: " << maxVal << std::endl;
+
     noise->Bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    noise->SetImage<float>(0, width, height, TextureObject::FormatR, TextureObject::InternalFormatR16F, pixels);
+    noise->GenerateMipmap();
+
+    return noise;
+}
+
+std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
+    std::shared_ptr<Texture2DObject> noise = std::make_shared<Texture2DObject>();
+
+    float minVal = 1.0, maxVal = -1.0;
+
+    std::vector<float> pixels(height * width);
+    for (unsigned int j = 0; j < height; ++j)
+    {
+        for (unsigned int i = 0; i < width; ++i)
+        {
+            float x = static_cast<float>(i) / (width - 1) + coords.x;
+            float y = static_cast<float>(j) / (height - 1) + coords.y;
+            float noise = stb_perlin_noise3(x, y, 0.0f, 0.0f, 0.0f, 0.0f);
+            noise = (noise + 1.0f) * 0.5f;
+            pixels[j * width + i] = noise;
+            minVal = std::min(minVal, noise);
+            maxVal = std::max(maxVal, noise);
+        }
+    }
+
+    std::cout << "Min: " << minVal << " Max: " << maxVal << std::endl;
+
+    noise->Bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     noise->SetImage<float>(0, width, height, TextureObject::FormatR, TextureObject::InternalFormatR16F, pixels);
     noise->GenerateMipmap();
 

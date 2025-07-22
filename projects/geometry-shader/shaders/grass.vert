@@ -12,7 +12,7 @@ out float timeOffset;
 uniform sampler2D HeightMap;
 
 void main() {
-    height = bladeHeight * (texture(HeightMap, vertexPosition.xz/10).r + .65) * 1.75;
+    height = bladeHeight * (texture(HeightMap, vertexPosition.xz/10).r + .35) * 2;
     angle = bladeAngle;
     timeOffset = bladeOffset;
     gl_Position = vec4(vertexPosition, 1.0);

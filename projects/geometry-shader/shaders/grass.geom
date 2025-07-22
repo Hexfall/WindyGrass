@@ -25,6 +25,10 @@ uniform float SwaySpeed = 1.0;
 
 uniform float NormalRounding = 3.1415/12;
 
+uniform sampler2D WindMap;
+uniform vec2 WindOffset;
+uniform vec2 WindSway;
+
 uniform mat4 WorldMatrix;
 uniform mat4 ViewProjMatrix;
 
@@ -50,11 +54,11 @@ mat4 inverseRotation(mat4 rotation) {
 }
 
 // Quadratic Bezier equation, assuming v0 = 0. Result is normalized.
-float bezierPoint(float step, float v1, float v2, float v3) {
+float bezierPoint(float step, float v1, float v2, float v3, float clamp) {
     float p1 = 3.0*pow(1.0-step, 2.0)*step*v1;
     float p2 = 3.0*(1.0-step)*pow(step, 2.0)*v2;
     float p3 = pow(step, 3.0)*v3;
-    return (p1 + p2 + p3) / v3;
+    return (p1 + p2 + p3) / clamp;
 }
 
 // Derivitive of quadratic Bezier equation for finding curve tangent. Result is normalized.
@@ -72,18 +76,26 @@ float getXCoord(float step) {
 
 // Calculates the coordinates for tapered edge of a blade of grass using a polynomial.
 float getYCoord(float step) {
-    return bezierPoint(step, BezStalk.y, BezPull.y, BezEnd.y+sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.y);
+    float sway = sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.y;
+    float wind = (texture(WindMap, WorldPosition.xz/5 + WindOffset).r) * WindSway.y;
+    return bezierPoint(step, BezStalk.y, BezPull.y, BezEnd.y + sway + wind, BezEnd.y);
 }
 
 // Calculates the bend of the grass with wind considered using a bezier curve.
 float getZCoord(float step) {
-    return bezierPoint(step, BezStalk.x, BezPull.x, BezEnd.x+sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.x);
+    float sway = sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.x;
+    float wind = (texture(WindMap, gl_in[0].gl_Position.xz/10).r + .5) * WindSway.x;
+    return bezierPoint(step, BezStalk.x, BezPull.x, BezEnd.x + sway + wind, BezEnd.x);
 }
 
 vec3 getBezierTangent(float step) {
-    float y = bezierDerivativePoint(step, BezStalk.y, BezPull.y, BezEnd.y) * height[0];
+    float windy = (texture(WindMap, gl_in[0].gl_Position.xz/10).r + .5) * WindSway.y;
+    float swayy = sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.y;
+    float y = bezierDerivativePoint(step, BezStalk.y, BezPull.y, BezEnd.y + swayy + windy) * height[0];
 
-    float z = bezierDerivativePoint(step, BezStalk.x, BezPull.x, BezEnd.x) * height[0] * HeightToLengthRatio;
+    float windz = (texture(WindMap, gl_in[0].gl_Position.xz/10).r + .5) * WindSway.x;
+    float swayz = sin(timeOffset[0]+Time*SwaySpeed)*SwayAmount.x;
+    float z = bezierDerivativePoint(step, BezStalk.x, BezPull.x, BezEnd.x + swayz + windz) * height[0] * HeightToLengthRatio;
     
     return vec3(0.0, y, z);
 }

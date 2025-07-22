@@ -54,10 +54,18 @@ private:
     float mv_specularReflectionValue;
     float mv_specularExponentValue;
     std::shared_ptr<Texture2DObject> m_grassTexture;
+    
+    glm::vec2 m_windSway;
+    glm::vec2 m_windOffset;
+    glm::vec2 m_windDirection;
+    float m_windSpeed;
+    bool m_showWind;
 
     void UpdateCamera();
 
     std::shared_ptr<Texture2DObject> LoadTexture(const char *path);
+
+    std::shared_ptr<Texture2DObject> CreateBrownianPerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords);
 
     std::shared_ptr<Texture2DObject> CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords);
 };
