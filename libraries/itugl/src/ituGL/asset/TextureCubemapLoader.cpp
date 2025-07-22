@@ -1,9 +1,11 @@
 #include <ituGL/asset/TextureCubemapLoader.h>
 
 #include <cassert>
+#ifndef _WIN32
 #include <vector>
 #include <cmath>
 #include <cstring>
+#endif
 #include <stb_image.h>
 
 TextureCubemapLoader::TextureCubemapLoader()

@@ -1,7 +1,9 @@
 #include <ituGL/asset/Texture2DLoader.h>
 
 #include <cassert>
+#ifndef _WIN32
 #include <cmath>
+#endif
 
 Texture2DLoader::Texture2DLoader()
     : m_flipVertical(false)

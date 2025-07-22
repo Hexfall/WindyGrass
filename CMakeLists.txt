@@ -1,7 +1,12 @@
 # ---------------------------------------------------------------------------------
 # Projects Settings
 # ---------------------------------------------------------------------------------
-cmake_minimum_required(VERSION 4.0)
+if (UNIX)
+    cmake_minimum_required(VERSION 4.0)
+endif (UNIX)
+if (WIN32)
+    cmake_minimum_required(VERSION 3.3)
+endif (WIN32)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

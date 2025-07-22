@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 4.0)
+if (UNIX)
+    cmake_minimum_required(VERSION 4.0)
+endif (UNIX)
+if (WIN32)
+    cmake_minimum_required(VERSION 3.3)
+endif (WIN32)
 
 project(GLFW VERSION 3.3.2 LANGUAGES C)
 

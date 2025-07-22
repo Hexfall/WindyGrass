@@ -1,4 +1,6 @@
-set(libraries glad glfw imgui assimp glm ${APPLE_LIBRARIES})
+if (UNIX)
+	set(libraries glad glfw imgui assimp glm ${APPLE_LIBRARIES})
+endif (UNIX)
 
 SET(target_inc "")
 FILE(GLOB subdirectories RELATIVE ${CMAKE_CURRENT_LIST_DIR}/include/ituGL ${CMAKE_CURRENT_LIST_DIR}/include/ituGL/*)
@@ -17,4 +19,6 @@ FOREACH(subdir ${subdirectories})
 ENDFOREACH()
 
 add_library(itugl STATIC ${target_inc} ${target_src})
-target_link_libraries(itugl ${libraries})
+if (UNIX)
+	target_link_libraries(itugl ${libraries})
+endif (UNIX)
