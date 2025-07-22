@@ -110,7 +110,7 @@ void GrassApplication::InitializeGrassMesh() {
 
     std::vector<Vertex> grassVertices;
 
-    for (int i = 0; i < 200000; i++) {
+    for (int i = 0; i < 100000; i++) {
         grassVertices.emplace_back(
                 glm::vec3(
                         ((float)rand() / RAND_MAX * 2 - 1)*10,

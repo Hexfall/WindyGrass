@@ -2,7 +2,6 @@
 
 in vec3 WorldPosition;
 in vec3 Normal;
-in float StalkDist;
 in vec2 TexCoord;
 
 out vec4 FragColor;
@@ -43,7 +42,6 @@ vec3 GetBlinnPhongReflection(vec3 objectColor, vec3 lightVector, vec3 viewVector
 void main() {
     vec3 viewVector = normalize(CameraPosition - WorldPosition);
     vec3 normalVector = normalize(Normal);
-    float factor = pow(StalkDist*2, 2.0);
     vec4 color = texture(GrassTexture, TexCoord);
     FragColor = vec4(GetBlinnPhongReflection(color.rgb, LightVector, viewVector, normalVector), 1.0f);
 }
