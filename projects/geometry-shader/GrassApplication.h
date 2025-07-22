@@ -58,4 +58,6 @@ private:
     void UpdateCamera();
 
     std::shared_ptr<Texture2DObject> LoadTexture(const char *path);
+
+    std::shared_ptr<Texture2DObject> CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords);
 };

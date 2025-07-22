@@ -163,7 +163,9 @@ void GrassApplication::InitializeMaterial() {
     m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
 
     m_grassTexture = LoadTexture("textures/grass.jpg");
+    auto grassHeightMap = CreatePerlinNoise(1024, 1024, glm::ivec2(0, 0));
     m_grassMaterial->SetUniformValue("GrassTexture", m_grassTexture);
+    m_grassMaterial->SetUniformValue("HeightMap", grassHeightMap);
     m_grassMaterial->SetBlendEquation(Material::BlendEquation::Add);
     m_grassMaterial->SetBlendParams(Material::BlendParam::SourceAlpha, Material::BlendParam::OneMinusSourceAlpha);
     
@@ -299,4 +301,25 @@ std::shared_ptr<Texture2DObject> GrassApplication::LoadTexture(const char* path)
     stbi_image_free(data);
 
     return texture;
+}
+
+std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
+    std::shared_ptr<Texture2DObject> noise = std::make_shared<Texture2DObject>();
+
+    std::vector<float> pixels(height * width);
+    for (unsigned int j = 0; j < height; ++j)
+    {
+        for (unsigned int i = 0; i < width; ++i)
+        {
+            float x = static_cast<float>(i) / (width - 1) + coords.x;
+            float y = static_cast<float>(j) / (height - 1) + coords.y;
+            pixels[j * width + i] = stb_perlin_fbm_noise3(x, y, 0.0f, 1.9f, 0.5f, 8) * 0.5f;
+        }
+    }
+
+    noise->Bind();
+    noise->SetImage<float>(0, width, height, TextureObject::FormatR, TextureObject::InternalFormatR16F, pixels);
+    noise->GenerateMipmap();
+
+    return noise;
 }
