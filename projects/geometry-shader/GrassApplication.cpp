@@ -43,22 +43,26 @@ void GrassApplication::Initialize() {
 
     glEnable(GL_DEPTH_TEST);
 
-    m_imGui.Initialize(GetMainWindow());
-
-    InitializeMesh();
+    InitializeGrassMesh();
+    InitializeDirtMesh();
     InitializeMaterial();
+
+    m_imGui.Initialize(GetMainWindow());
 }
 
 void GrassApplication::InitializeShaders() {
     // Vertex shader(s)
     Shader grassVertexShader = ShaderLoader(Shader::VertexShader).Load("shaders/grass.vert");
+    Shader dirtVertexShader = ShaderLoader(Shader::VertexShader).Load("shaders/dirt.vert");
 
     // Geometry shader(s)
     Shader grassGeoShader = ShaderLoader(Shader::GeometryShader).Load("shaders/grass.geom");
 
     // Geometry shader(s)
     Shader grassFragShader = ShaderLoader(Shader::FragmentShader).Load("shaders/grass.frag");
+    Shader dirtFragShader = ShaderLoader(Shader::FragmentShader).Load("shaders/dirt.frag");
 
+    // Build Shaders
     m_grassShaderProgram = std::make_shared<ShaderProgram>();
     if (!m_grassShaderProgram->Build(grassVertexShader, grassFragShader, grassGeoShader)) {
         char c[512];
@@ -71,9 +75,22 @@ void GrassApplication::InitializeShaders() {
         std::cerr << std::endl;
         return;
     }
+    
+    m_dirtShaderProgram = std::make_shared<ShaderProgram>();
+    if (!m_dirtShaderProgram->Build(dirtVertexShader, dirtFragShader)) {
+        char c[512];
+        std::span<char> err(c);
+        std::cerr << "Error linking shaders" << std::endl;
+        m_grassShaderProgram->GetLinkingErrors(err);
+        for (const auto& e : err) {
+            std::cerr << e;
+        }
+        std::cerr << std::endl;
+        return;
+    }
 }
 
-void GrassApplication::InitializeMesh() {
+void GrassApplication::InitializeGrassMesh() {
     // Define the vertex structure
     struct Vertex
     {
@@ -93,12 +110,12 @@ void GrassApplication::InitializeMesh() {
 
     std::vector<Vertex> grassVertices;
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 200000; i++) {
         grassVertices.emplace_back(
                 glm::vec3(
-                        ((float)rand() / RAND_MAX * 2 - 1)*3.5,
+                        ((float)rand() / RAND_MAX * 2 - 1)*10,
                         0,
-                        ((float)rand() / RAND_MAX * 2 - 1)*3.5),
+                        ((float)rand() / RAND_MAX * 2 - 1)*10),
                 (float)rand() / RAND_MAX*.25 + 0.15f,
                 (float)rand() / RAND_MAX * 2 * 3.14159f);
     }
@@ -113,6 +130,35 @@ void GrassApplication::InitializeMesh() {
     );
 }
 
+void GrassApplication::InitializeDirtMesh() {
+    // Define the vertex structure
+    struct Vertex {
+        Vertex() = default;
+        Vertex(const glm::vec3& position, const glm::vec2& uvPosition) : position(position), uvPosition(uvPosition) {}
+        glm::vec3 position;
+        glm::vec2 uvPosition;
+    };
+
+    VertexFormat vertexFormat;
+    vertexFormat.AddVertexAttribute<float>(3);
+    vertexFormat.AddVertexAttribute<float>(2);
+
+    std::vector<Vertex> vertices;
+    vertices.emplace_back(glm::vec3(-10, 0, -10), glm::vec2(0, 0));
+    vertices.emplace_back(glm::vec3(-10, 0, 10), glm::vec2(0, 1));
+    vertices.emplace_back(glm::vec3(10, 0, -10), glm::vec2(1, 0));
+    vertices.emplace_back(glm::vec3(10, 0, 10), glm::vec2(1, 1));
+
+    m_dirtMesh.AddSubmesh<Vertex, VertexFormat::LayoutIterator>(
+            Drawcall::Primitive::TriangleStrip,
+            vertices,
+            vertexFormat.LayoutBegin(
+                    static_cast<int>(vertices.size()),
+                    true /* interleaved */),
+            vertexFormat.LayoutEnd()
+    );
+}
+
 void GrassApplication::InitializeMaterial() {
     m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
 
@@ -120,6 +166,10 @@ void GrassApplication::InitializeMaterial() {
     m_grassMaterial->SetUniformValue("GrassTexture", m_grassTexture);
     m_grassMaterial->SetBlendEquation(Material::BlendEquation::Add);
     m_grassMaterial->SetBlendParams(Material::BlendParam::SourceAlpha, Material::BlendParam::OneMinusSourceAlpha);
+    
+    m_dirtMaterial = std::make_shared<Material>(m_dirtShaderProgram);
+    
+    m_dirtMaterial->SetUniformValue("Color", glm::vec3(0.512, 0.395, 0.223));
 }
 
 void GrassApplication::Update() {
@@ -187,6 +237,11 @@ void GrassApplication::Render() {
     m_grassMaterial->SetUniformValue("Time", mv_time);
     
     m_grassMesh.DrawSubmesh(0);
+    
+    m_dirtMaterial->Use();
+    m_dirtMaterial->SetUniformValue("WorldMatrix", glm::scale(glm::vec3(1.0f)));
+    m_dirtMaterial->SetUniformValue("ViewProjMatrix", m_camera.GetViewProjectionMatrix());
+    m_dirtMesh.DrawSubmesh(0);
     
     RenderGUI();
 }

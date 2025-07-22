@@ -21,15 +21,19 @@ protected:
     
 private:
     void InitializeShaders();
-    void InitializeMesh();
+    void InitializeGrassMesh();
+    void InitializeDirtMesh();
     void InitializeMaterial();
     void RenderGUI();
 
     DearImGui m_imGui;
-    
+
     std::shared_ptr<ShaderProgram> m_grassShaderProgram;
+    std::shared_ptr<ShaderProgram> m_dirtShaderProgram;
     Mesh m_grassMesh;
+    Mesh m_dirtMesh;
     std::shared_ptr<Material> m_grassMaterial;
+    std::shared_ptr<Material> m_dirtMaterial;
     
     Camera m_camera;
     glm::vec3 m_cameraPos;
