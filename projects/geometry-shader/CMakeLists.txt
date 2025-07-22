@@ -1,5 +1,5 @@
 if (WIN32)
-    set(libraries glad glfw itugl ${APPLE_LIBRARIES})
+    set(libraries glad glfw assimp imgui itugl ${APPLE_LIBRARIES})
 endif (WIN32)
 if (UNIX)
     set(libraries glad glfw assimp imgui itugl ${APPLE_LIBRARIES})
