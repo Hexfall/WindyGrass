@@ -19,20 +19,20 @@
 
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
-      mv_grassHeightToWidthRatioValue(0.035f),
-      mv_grassHeightToLengthRatioValue(0.35f),
+      m_grassHeightToWidthRatio(0.035f),
+      m_grassHeightToLengthRatio(0.35f),
       m_cameraPos(0, 1.6, -2),
       m_cameraDir(0, -.2, 1),
       m_cameraSpeed(0.005),
-      mv_grassStalkPoint(0, 1.49),
-      mv_grassPullPoint(1.83, 6.06), 
-      mv_grassEndPoint(6.11, 6.02),
-      mv_time(0.0f),
-      mv_grassSegmentsValue(16u),
-      mv_ambientReflectionValue(0.9),
-      mv_diffuseReflectionValue(0.9),
-      mv_specularReflectionValue(1.1),
-      mv_specularExponentValue(50.0),
+      m_grassStalkPoint(0, 1.49),
+      m_grassPullPoint(1.83, 6.06),
+      m_grassEndPoint(6.11, 6.02),
+      m_time(0.0f),
+      m_grassSegmentsValue(16u),
+      m_ambientReflectionValue(0.9),
+      m_diffuseReflectionValue(0.9),
+      m_specularReflectionValue(1.1),
+      m_specularExponentValue(50.0),
       m_windOffset(0),
       m_windDirection(1, -1.63),
       m_windSpeed(.6),
@@ -167,10 +167,10 @@ void GrassApplication::InitializeDirtMesh() {
 void GrassApplication::InitializeMaterial() {
     m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
 
-    m_grassTexture = LoadTexture("textures/grass.jpg");
+    auto grassTexture = LoadTexture("textures/grass.jpg");
     auto grassHeightMap = CreatePerlinNoise(1024, 1024, glm::ivec2(0, 0), true);
     auto grassWindMap = CreatePerlinNoise(1024, 1024, glm::ivec2(-1, -1));
-    m_grassMaterial->SetUniformValue("GrassTexture", m_grassTexture);
+    m_grassMaterial->SetUniformValue("GrassTexture", grassTexture);
     m_grassMaterial->SetUniformValue("HeightMap", grassHeightMap);
     m_grassMaterial->SetUniformValue("WindMap", grassWindMap);
     m_grassMaterial->SetBlendEquation(Material::BlendEquation::Add);
@@ -189,8 +189,8 @@ void GrassApplication::InitializeMaterial() {
 
 void GrassApplication::Update() {
     Application::Update();
-    
-    mv_time += GetDeltaTime();
+
+    m_time += GetDeltaTime();
     
     if (GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right)) {
         glm::vec2 mouseDelta = GetMainWindow().GetMousePosition(true) - m_mousePos;
@@ -243,23 +243,23 @@ void GrassApplication::RenderGrass() {
     m_grassMaterial->SetUniformValue("CameraPosition", m_cameraPos);
     
     // Blade construction variables.
-    m_grassMaterial->SetUniformValue("HeightToWidthRatio", mv_grassHeightToWidthRatioValue);
-    m_grassMaterial->SetUniformValue("HeightToLengthRatio", mv_grassHeightToLengthRatioValue);
-    m_grassMaterial->SetUniformValue("Segments", (unsigned int) mv_grassSegmentsValue);
-    m_grassMaterial->SetUniformValue("BezStalk", mv_grassStalkPoint);
-    m_grassMaterial->SetUniformValue("BezPull", mv_grassPullPoint);
-    m_grassMaterial->SetUniformValue("BezEnd", mv_grassEndPoint);
+    m_grassMaterial->SetUniformValue("HeightToWidthRatio", m_grassHeightToWidthRatio);
+    m_grassMaterial->SetUniformValue("HeightToLengthRatio", m_grassHeightToLengthRatio);
+    m_grassMaterial->SetUniformValue("Segments", (unsigned int) m_grassSegmentsValue);
+    m_grassMaterial->SetUniformValue("BezStalk", m_grassStalkPoint);
+    m_grassMaterial->SetUniformValue("BezPull", m_grassPullPoint);
+    m_grassMaterial->SetUniformValue("BezEnd", m_grassEndPoint);
     
     // Idle swaying values.
     m_grassMaterial->SetUniformValue("SwayAmount", glm::vec2(1, -1));
     m_grassMaterial->SetUniformValue("SwaySpeed", 1.0f);
-    m_grassMaterial->SetUniformValue("Time", mv_time);
+    m_grassMaterial->SetUniformValue("Time", m_time);
     
     // Blinn-Phong properties.
-    m_grassMaterial->SetUniformValue("AmbientReflection", mv_ambientReflectionValue);
-    m_grassMaterial->SetUniformValue("DiffuseReflection", mv_diffuseReflectionValue);
-    m_grassMaterial->SetUniformValue("SpecularReflection", mv_specularReflectionValue);
-    m_grassMaterial->SetUniformValue("SpecularExponent", mv_specularExponentValue);
+    m_grassMaterial->SetUniformValue("AmbientReflection", m_ambientReflectionValue);
+    m_grassMaterial->SetUniformValue("DiffuseReflection", m_diffuseReflectionValue);
+    m_grassMaterial->SetUniformValue("SpecularReflection", m_specularReflectionValue);
+    m_grassMaterial->SetUniformValue("SpecularExponent", m_specularExponentValue);
     m_grassMaterial->SetUniformValue("LightVector", glm::normalize(glm::vec3(.75, 1, 0)));
     m_grassMaterial->SetUniformValue("AmbientColor", glm::vec3(0.25));;
     m_grassMaterial->SetUniformValue("LightColor", glm::vec3(1));
@@ -293,19 +293,19 @@ void GrassApplication::RenderGUI() {
         ImGui::DragFloat3("Camera Angle", &m_cameraDir[0]);
     }
     if (ImGui::CollapsingHeader("Grass Properties")) {
-        ImGui::DragFloat("Height to width ratio", &mv_grassHeightToWidthRatioValue, 0.001f, 0.001f, 10.0f);
-        ImGui::DragFloat("Height to length ratio", &mv_grassHeightToLengthRatioValue, 0.001f, 0.001f, 10.0f);
-        ImGui::DragFloat2("Stalk Point", &mv_grassStalkPoint[0], 0.05f);
-        ImGui::DragFloat2("Pull Point", &mv_grassPullPoint[0], 0.05f);
-        ImGui::DragFloat2("End Point", &mv_grassEndPoint[0], 0.05f);
-        ImGui::DragFloat("Time", &mv_time, 0.05f);
-        ImGui::DragInt("Segments", &mv_grassSegmentsValue, 1, 1, 16);
+        ImGui::DragFloat("Height to width ratio", &m_grassHeightToWidthRatio, 0.001f, 0.001f, 10.0f);
+        ImGui::DragFloat("Height to length ratio", &m_grassHeightToLengthRatio, 0.001f, 0.001f, 10.0f);
+        ImGui::DragFloat2("Stalk Point", &m_grassStalkPoint[0], 0.05f);
+        ImGui::DragFloat2("Pull Point", &m_grassPullPoint[0], 0.05f);
+        ImGui::DragFloat2("End Point", &m_grassEndPoint[0], 0.05f);
+        ImGui::DragFloat("Time", &m_time, 0.05f);
+        ImGui::DragInt("Segments", &m_grassSegmentsValue, 1, 1, 16);
     }
     if (ImGui::CollapsingHeader("Material Properties")) {
-        ImGui::DragFloat("Ambient Reflection", &mv_ambientReflectionValue, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat("Diffuse Reflection", &mv_diffuseReflectionValue, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat("Specular Reflection", &mv_specularReflectionValue, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat("Specular Exponent", &mv_specularExponentValue, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Ambient Reflection", &m_ambientReflectionValue, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Diffuse Reflection", &m_diffuseReflectionValue, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Specular Reflection", &m_specularReflectionValue, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Specular Exponent", &m_specularExponentValue, 0.1f, 0.0f, 100.0f);
     }
     if (ImGui::CollapsingHeader("Wind Properties")) {
         ImGui::Checkbox("Show Wind", &m_showWind);

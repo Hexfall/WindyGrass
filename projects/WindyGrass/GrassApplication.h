@@ -30,11 +30,14 @@ private:
 
     DearImGui m_imGui;
 
+    // Grass
     std::shared_ptr<ShaderProgram> m_grassShaderProgram;
-    std::shared_ptr<ShaderProgram> m_dirtShaderProgram;
     Mesh m_grassMesh;
-    Mesh m_dirtMesh;
     std::shared_ptr<Material> m_grassMaterial;
+    
+    // Dirt
+    std::shared_ptr<ShaderProgram> m_dirtShaderProgram;
+    Mesh m_dirtMesh;
     std::shared_ptr<Material> m_dirtMaterial;
     
     Camera m_camera;
@@ -44,18 +47,17 @@ private:
     
     glm::vec2 m_mousePos;
 
-    float mv_grassHeightToWidthRatioValue;
-    float mv_grassHeightToLengthRatioValue;
-    glm::vec2 mv_grassStalkPoint;
-    glm::vec2 mv_grassPullPoint;
-    glm::vec2 mv_grassEndPoint;
-    float mv_time;
-    int  mv_grassSegmentsValue;
-    float mv_ambientReflectionValue;
-    float mv_diffuseReflectionValue;
-    float mv_specularReflectionValue;
-    float mv_specularExponentValue;
-    std::shared_ptr<Texture2DObject> m_grassTexture;
+    float m_grassHeightToWidthRatio;
+    float m_grassHeightToLengthRatio;
+    glm::vec2 m_grassStalkPoint;
+    glm::vec2 m_grassPullPoint;
+    glm::vec2 m_grassEndPoint;
+    float m_time;
+    int  m_grassSegmentsValue;
+    float m_ambientReflectionValue;
+    float m_diffuseReflectionValue;
+    float m_specularReflectionValue;
+    float m_specularExponentValue;
     
     glm::vec2 m_windSway;
     glm::vec2 m_windOffset;
