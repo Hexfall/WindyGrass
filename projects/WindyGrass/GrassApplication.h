@@ -65,7 +65,5 @@ private:
 
     std::shared_ptr<Texture2DObject> LoadTexture(const char *path);
 
-    std::shared_ptr<Texture2DObject> CreateBrownianPerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords);
-
-    std::shared_ptr<Texture2DObject> CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords);
+    std::shared_ptr<Texture2DObject> CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords, bool brownian = false);
 };

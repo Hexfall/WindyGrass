@@ -168,7 +168,7 @@ void GrassApplication::InitializeMaterial() {
     m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
 
     m_grassTexture = LoadTexture("textures/grass.jpg");
-    auto grassHeightMap = CreateBrownianPerlinNoise(1024, 1024, glm::ivec2(0, 0));
+    auto grassHeightMap = CreatePerlinNoise(1024, 1024, glm::ivec2(0, 0), true);
     auto grassWindMap = CreatePerlinNoise(1024, 1024, glm::ivec2(-1, -1));
     m_grassMaterial->SetUniformValue("GrassTexture", m_grassTexture);
     m_grassMaterial->SetUniformValue("HeightMap", grassHeightMap);
@@ -331,10 +331,8 @@ std::shared_ptr<Texture2DObject> GrassApplication::LoadTexture(const char* path)
     return texture;
 }
 
-std::shared_ptr<Texture2DObject> GrassApplication::CreateBrownianPerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
+std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords, bool brownian) {
     std::shared_ptr<Texture2DObject> noise = std::make_shared<Texture2DObject>();
-
-    float minVal = 1.0, maxVal = -1.0;
 
     std::vector<float> pixels(height * width);
     for (unsigned int j = 0; j < height; ++j)
@@ -343,47 +341,15 @@ std::shared_ptr<Texture2DObject> GrassApplication::CreateBrownianPerlinNoise(uns
         {
             float x = static_cast<float>(i) / (width - 1) + coords.x;
             float y = static_cast<float>(j) / (height - 1) + coords.y;
-            float noise = stb_perlin_fbm_noise3(x, y, 0.0f, 2.0f, 0.5f, 4);
-            noise = glm::clamp(noise, -1.0f, 1.0f);
-            noise = (noise + 1.0f) * 0.5f;
-            pixels[j * width + i] = noise;
-            minVal = std::min(minVal, noise);
-            maxVal = std::max(maxVal, noise);
+            float noiseVal;
+            if (brownian)
+                noiseVal = stb_perlin_fbm_noise3(x, y, 0.0f, 2.0f, 0.5f, 4);
+            else
+                noiseVal = stb_perlin_noise3(x, y, 0.0f, 0.0f, 0.0f, 0.0f);
+            noiseVal = (noiseVal + 1.0f) * 0.5f; // Normalize range to [0, 1].
+            pixels[j * width + i] = noiseVal;
         }
     }
-
-    std::cout << "Min: " << minVal << " Max: " << maxVal << std::endl;
-
-    noise->Bind();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    noise->SetImage<float>(0, width, height, TextureObject::FormatR, TextureObject::InternalFormatR16F, pixels);
-    noise->GenerateMipmap();
-
-    return noise;
-}
-
-std::shared_ptr<Texture2DObject> GrassApplication::CreatePerlinNoise(unsigned int width, unsigned int height, glm::ivec2 coords) {
-    std::shared_ptr<Texture2DObject> noise = std::make_shared<Texture2DObject>();
-
-    float minVal = 1.0, maxVal = -1.0;
-
-    std::vector<float> pixels(height * width);
-    for (unsigned int j = 0; j < height; ++j)
-    {
-        for (unsigned int i = 0; i < width; ++i)
-        {
-            float x = static_cast<float>(i) / (width - 1) + coords.x;
-            float y = static_cast<float>(j) / (height - 1) + coords.y;
-            float noise = stb_perlin_noise3(x, y, 0.0f, 0.0f, 0.0f, 0.0f);
-            noise = (noise + 1.0f) * 0.5f;
-            pixels[j * width + i] = noise;
-            minVal = std::min(minVal, noise);
-            maxVal = std::max(maxVal, noise);
-        }
-    }
-
-    std::cout << "Min: " << minVal << " Max: " << maxVal << std::endl;
 
     noise->Bind();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
