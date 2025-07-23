@@ -27,6 +27,8 @@ private:
     void RenderGUI();
     void RenderGrass();
     void RenderDirt();
+    void MoveCamera();
+    void PanCamera();
     
     float planeWidth;
     float planeDepth;

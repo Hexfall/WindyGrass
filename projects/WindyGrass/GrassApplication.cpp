@@ -196,6 +196,14 @@ void GrassApplication::Update() {
 
     m_time += GetDeltaTime();
     
+    m_windOffset += GetDeltaTime() * m_windSpeed * m_windDirection;
+    
+    PanCamera();
+    MoveCamera();
+    UpdateCamera();
+}
+
+void GrassApplication::PanCamera() {
     if (GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right)) {
         glm::vec2 mouseDelta = GetMainWindow().GetMousePosition(true) - m_mousePos;
         m_cameraDir = glm::rotate(mouseDelta.x * 0.5f, glm::vec3(0, 1, 0)) * glm::vec4(m_cameraDir, 0);
@@ -203,7 +211,9 @@ void GrassApplication::Update() {
     }
     
     m_mousePos = GetMainWindow().GetMousePosition(true);
-    
+}
+
+void GrassApplication::MoveCamera() {
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_W))
         m_cameraPos += m_cameraDir * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_S))
@@ -216,10 +226,6 @@ void GrassApplication::Update() {
         m_cameraPos += glm::vec3(0, 1, 0) * m_cameraSpeed;
     if (GetMainWindow().IsKeyPressed(GLFW_KEY_LEFT_SHIFT))
         m_cameraPos -= glm::vec3(0, 1, 0) * m_cameraSpeed;
-    
-    m_windOffset += GetDeltaTime() * m_windSpeed * m_windDirection;
-    
-    UpdateCamera();
 }
 
 void GrassApplication::UpdateCamera() {
