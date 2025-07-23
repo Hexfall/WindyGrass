@@ -22,6 +22,7 @@ GrassApplication::GrassApplication()
       planeDepth(20),
       planeWidth(20),
       grassDensity(200),
+      skyColor(0.195f, 0.598f, 0.797f, 1.0f),
       m_grassHeightToWidthRatio(0.035f),
       m_grassHeightToLengthRatio(0.35f),
       m_cameraPos(0, 1.6, -2),
@@ -237,7 +238,7 @@ void GrassApplication::UpdateCamera() {
 void GrassApplication::Render() {
     Application::Render();
     
-    GetDevice().Clear(true, Color(0.195f, 0.598f, 0.797f, 1.0f), true, 1.0f);
+    GetDevice().Clear(true, skyColor, true, 1.0f);
     
     RenderGrass();
     RenderDirt();

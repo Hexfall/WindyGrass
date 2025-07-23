@@ -33,6 +33,8 @@ private:
     float planeWidth;
     float planeDepth;
     int grassDensity; // Blades of grass in a 1x1 area.
+    
+    Color skyColor;
 
     DearImGui m_imGui;
 
