@@ -23,10 +23,14 @@ private:
     void InitializeShaders();
     void InitializeGrassMesh();
     void InitializeDirtMesh();
-    void InitializeMaterial();
+    void InitializeMaterials();
     void RenderGUI();
     void RenderGrass();
     void RenderDirt();
+    
+    float planeWidth;
+    float planeDepth;
+    int grassDensity; // Blades of grass in a 1x1 area.
 
     DearImGui m_imGui;
 

@@ -19,6 +19,9 @@
 
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
+      planeDepth(20),
+      planeWidth(20),
+      grassDensity(200),
       m_grassHeightToWidthRatio(0.035f),
       m_grassHeightToLengthRatio(0.35f),
       m_cameraPos(0, 1.6, -2),
@@ -50,7 +53,7 @@ void GrassApplication::Initialize() {
 
     InitializeGrassMesh();
     InitializeDirtMesh();
-    InitializeMaterial();
+    InitializeMaterials();
 
     m_imGui.Initialize(GetMainWindow());
 }
@@ -115,12 +118,12 @@ void GrassApplication::InitializeGrassMesh() {
 
     std::vector<Vertex> grassVertices;
 
-    for (int i = 0; i < 75000; i++) {
+    for (int i = 0; i < (int)(planeWidth*planeDepth*grassDensity); i++) {
         grassVertices.emplace_back(
                 glm::vec3(
-                        ((float)rand() / RAND_MAX * 2 - 1)*10,
+                        ((float)rand() / RAND_MAX * 2 - 1)*(planeWidth/2),
                         0,
-                        ((float)rand() / RAND_MAX * 2 - 1)*10),
+                        ((float)rand() / RAND_MAX * 2 - 1)*(planeDepth/2)),
                 (float)rand() / RAND_MAX*.35 + 0.25f,
                 (float)rand() / RAND_MAX * 2 * 3.14159f);
     }
@@ -149,10 +152,10 @@ void GrassApplication::InitializeDirtMesh() {
     vertexFormat.AddVertexAttribute<float>(2);
 
     std::vector<Vertex> vertices;
-    vertices.emplace_back(glm::vec3(-10, 0, -10), glm::vec2(0, 0));
-    vertices.emplace_back(glm::vec3(-10, 0, 10), glm::vec2(0, 1));
-    vertices.emplace_back(glm::vec3(10, 0, -10), glm::vec2(1, 0));
-    vertices.emplace_back(glm::vec3(10, 0, 10), glm::vec2(1, 1));
+    vertices.emplace_back(glm::vec3(-(planeWidth/2), 0, -(planeDepth/2)), glm::vec2(0, 0));
+    vertices.emplace_back(glm::vec3(-(planeWidth/2), 0, (planeDepth/2)), glm::vec2(0, 1));
+    vertices.emplace_back(glm::vec3((planeWidth/2), 0, -(planeDepth/2)), glm::vec2(1, 0));
+    vertices.emplace_back(glm::vec3((planeWidth/2), 0, (planeDepth/2)), glm::vec2(1, 1));
 
     m_dirtMesh.AddSubmesh<Vertex, VertexFormat::LayoutIterator>(
             Drawcall::Primitive::TriangleStrip,
@@ -164,12 +167,13 @@ void GrassApplication::InitializeDirtMesh() {
     );
 }
 
-void GrassApplication::InitializeMaterial() {
-    m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
-
+void GrassApplication::InitializeMaterials() {
     auto grassTexture = LoadTexture("textures/grass.jpg");
     auto grassHeightMap = CreatePerlinNoise(1024, 1024, glm::ivec2(0, 0), true);
     auto grassWindMap = CreatePerlinNoise(1024, 1024, glm::ivec2(-1, -1));
+    
+    m_grassMaterial = std::make_shared<Material>(m_grassShaderProgram);
+    
     m_grassMaterial->SetUniformValue("GrassTexture", grassTexture);
     m_grassMaterial->SetUniformValue("HeightMap", grassHeightMap);
     m_grassMaterial->SetUniformValue("WindMap", grassWindMap);
