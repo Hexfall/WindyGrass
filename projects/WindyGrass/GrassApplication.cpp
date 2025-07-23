@@ -19,8 +19,8 @@
 
 GrassApplication::GrassApplication()
     : Application(1280, 720, "Geometry Shader"),
-      planeDepth(20),
-      planeWidth(20),
+      planeDepth(40),
+      planeWidth(40),
       grassDensity(200),
       skyColor(0.195f, 0.598f, 0.797f, 1.0f),
       m_grassHeightToWidthRatio(0.035f),
