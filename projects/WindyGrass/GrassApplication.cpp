@@ -228,10 +228,21 @@ void GrassApplication::Render() {
     Application::Render();
     
     GetDevice().Clear(true, Color(0.195f, 0.598f, 0.797f, 1.0f), true, 1.0f);
+    
+    RenderGrass();
+    RenderDirt();
+    
+    RenderGUI();
+}
 
+void GrassApplication::RenderGrass() {
     m_grassMaterial->Use();
+    // World information.
     m_grassMaterial->SetUniformValue("WorldMatrix", glm::scale(glm::vec3(1.0f)));
     m_grassMaterial->SetUniformValue("ViewProjMatrix", m_camera.GetViewProjectionMatrix());
+    m_grassMaterial->SetUniformValue("CameraPosition", m_cameraPos);
+    
+    // Blade construction variables.
     m_grassMaterial->SetUniformValue("HeightToWidthRatio", mv_grassHeightToWidthRatioValue);
     m_grassMaterial->SetUniformValue("HeightToLengthRatio", mv_grassHeightToLengthRatioValue);
     m_grassMaterial->SetUniformValue("Segments", (unsigned int) mv_grassSegmentsValue);
@@ -239,33 +250,38 @@ void GrassApplication::Render() {
     m_grassMaterial->SetUniformValue("BezPull", mv_grassPullPoint);
     m_grassMaterial->SetUniformValue("BezEnd", mv_grassEndPoint);
     
-
-    m_grassMaterial->SetUniformValue("CameraPosition", m_cameraPos);
+    // Idle swaying values.
+    m_grassMaterial->SetUniformValue("SwayAmount", glm::vec2(1, -1));
+    m_grassMaterial->SetUniformValue("SwaySpeed", 1.0f);
+    m_grassMaterial->SetUniformValue("Time", mv_time);
+    
+    // Blinn-Phong properties.
     m_grassMaterial->SetUniformValue("AmbientReflection", mv_ambientReflectionValue);
     m_grassMaterial->SetUniformValue("DiffuseReflection", mv_diffuseReflectionValue);
     m_grassMaterial->SetUniformValue("SpecularReflection", mv_specularReflectionValue);
     m_grassMaterial->SetUniformValue("SpecularExponent", mv_specularExponentValue);
-    m_grassMaterial->SetUniformValue("SwayAmount", glm::vec2(1, -1));
-    m_grassMaterial->SetUniformValue("SwaySpeed", 1.0f);
     m_grassMaterial->SetUniformValue("LightVector", glm::normalize(glm::vec3(.75, 1, 0)));
     m_grassMaterial->SetUniformValue("AmbientColor", glm::vec3(0.25));;
     m_grassMaterial->SetUniformValue("LightColor", glm::vec3(1));
-    
+
+    // Wind properties.
     m_grassMaterial->SetUniformValue("WindOffset", m_windOffset);
     m_grassMaterial->SetUniformValue("WindSway", m_windSway);
 
-    m_grassMaterial->SetUniformValue("Time", mv_time);
-    
     m_grassMesh.DrawSubmesh(0);
-    
+}
+
+void GrassApplication::RenderDirt() {
     m_dirtMaterial->Use();
+    // World information.
     m_dirtMaterial->SetUniformValue("WorldMatrix", glm::scale(glm::vec3(1.0f)));
     m_dirtMaterial->SetUniformValue("ViewProjMatrix", m_camera.GetViewProjectionMatrix());
+    
+    // Wind map values.
     m_dirtMaterial->SetUniformValue("ShowTexture", (m_showWind ? 1u : 0u));
     m_dirtMaterial->SetUniformValue("TextureOffset", m_windOffset);
-    m_dirtMesh.DrawSubmesh(0);
     
-    RenderGUI();
+    m_dirtMesh.DrawSubmesh(0);
 }
 
 void GrassApplication::RenderGUI() {

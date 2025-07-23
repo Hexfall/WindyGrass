@@ -25,6 +25,8 @@ private:
     void InitializeDirtMesh();
     void InitializeMaterial();
     void RenderGUI();
+    void RenderGrass();
+    void RenderDirt();
 
     DearImGui m_imGui;
 
