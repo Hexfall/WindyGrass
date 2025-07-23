@@ -101,7 +101,7 @@ vec3 getBezierTangent(float step) {
 }
 
 vec3 getCurveNormal(vec3 tangent) {
-    return cross(vec3(-1.0, 0.0, 0.0), tangent);
+    return cross(tangent, vec3(1.0, 0.0, 0.0));
 }
 
 void main() {
