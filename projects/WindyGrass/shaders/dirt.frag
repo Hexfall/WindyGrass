@@ -18,6 +18,5 @@ void main() {
     } else {
         float wind = (texture(PerlinTexture, WorldPosition.xz/5 + TextureOffset).r);
         FragColor = vec4(mix(LoColor, HiColor, wind), 1.0);
-        //FragColor = vec4(wind, wind, wind, 1.0);
     }
 }
